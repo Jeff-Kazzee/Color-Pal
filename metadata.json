@@ -1,0 +1,5 @@
+{
+  "name": "Color Pal",
+  "description": "An AI-powered web application that generates professional, aesthetically-pleasing 5-color palettes based on three descriptive words provided by users. It provides comprehensive usage guidelines and accessibility checks.",
+  "requestFramePermissions": []
+}
