@@ -16,18 +16,9 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [paletteData, setPaletteData] = useState<FullPaletteResponse | null>(null);
   const [history, setHistory] = useLocalStorage<FullPaletteResponse[]>('paletteHistory', []);
-  const [isApiKeySet, setIsApiKeySet] = useState(false);
   const [model, setModel] = useState<Model>('gemini-2.5-flash');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // This is a global function provided by the environment.
-    // @ts-ignore
-    window.aistudio.hasSelectedApiKey().then((hasKey: boolean) => {
-      setIsApiKeySet(hasKey);
-    });
-  }, []);
 
   useEffect(() => {
     if (paletteData && resultsRef.current) {
@@ -48,18 +39,7 @@ const App: React.FC = () => {
     }
   }, [paletteData]);
 
-
-  const handleSelectKey = async () => {
-     // @ts-ignore
-    await window.aistudio.openSelectKey();
-    setIsApiKeySet(true); // Assume success to avoid race conditions
-  };
-
   const handleGenerate = useCallback(async () => {
-    if (!isApiKeySet) {
-      setError('Please select an API key first.');
-      return;
-    }
     const words = inputWords.split(',').map(w => w.trim()).filter(Boolean);
     if (words.length !== 3) {
       setError('Please enter exactly 3 descriptive words, separated by commas.');
@@ -76,15 +56,14 @@ const App: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       if (err.message === "API_KEY_INVALID") {
-        setError('Your API key is invalid or not found. Please select a valid key.');
-        setIsApiKeySet(false);
+        setError('Configuration Error: The Google AI API key is missing or invalid. Please contact the site administrator to configure it.');
       } else {
         setError('Failed to generate palette. The AI might be busy. Please try again.');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [inputWords, setHistory, isApiKeySet, model]);
+  }, [inputWords, setHistory, model]);
 
   const loadFromHistory = (item: FullPaletteResponse) => {
     setPaletteData(item);
@@ -144,17 +123,7 @@ const App: React.FC = () => {
             Generate a professional 5-color brand palette from just 3 words with our AI-powered tool.
           </p>
           <div className="mt-8 md:mt-12 max-w-xl mx-auto">
-            {!isApiKeySet ? (
-                <div className="bg-dark-100 border-2 border-dashed border-dark-300 rounded-lg p-6 text-center">
-                    <KeyRound className="mx-auto text-brand-primary mb-3" size={32}/>
-                    <h2 className="font-bold text-dark-800">API Key Required</h2>
-                    <p className="text-sm text-dark-500 mt-1 mb-4">Please select your Google AI API key to continue.</p>
-                     <p className="text-xs text-dark-400 mb-4">Access to the API may require a key with a configured billing account. <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="underline hover:text-brand-primary">Learn more</a>.</p>
-                    <button onClick={handleSelectKey} className="bg-brand-primary text-white font-semibold px-5 py-2.5 rounded-md hover:bg-brand-primary-dark transition-colors">
-                        Select API Key
-                    </button>
-                </div>
-            ) : renderGenerator()}
+            {renderGenerator()}
             {error && <p className="mt-2 text-red-500 text-sm text-left">{error}</p>}
           </div>
         </div>
@@ -217,7 +186,7 @@ const App: React.FC = () => {
             <h2 className="text-2xl font-bold text-dark-800 mb-6 text-center">Your Recent Palettes</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {history.map((histItem, index) => (
-                <div key={index} onClick={() => isApiKeySet && loadFromHistory(histItem)} className={`bg-dark-100 rounded-lg p-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 border border-dark-200 ${isApiKeySet ? 'cursor-pointer' : 'opacity-50'}`}>
+                <div key={index} onClick={() => loadFromHistory(histItem)} className="bg-dark-100 rounded-lg p-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 border border-dark-200 cursor-pointer">
                   <div className="flex -space-x-3">
                     {Object.values(histItem.palette).map(c => (
                       <div key={c.hex} style={{backgroundColor: c.hex}} className="w-10 h-10 rounded-full border-2 border-dark-100 shadow-md"></div>
